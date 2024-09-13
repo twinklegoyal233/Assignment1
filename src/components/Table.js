@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactPaginate from "react-paginate";
 import Popup from "./Popup";
 import DeleteConfirmationPopup from "./DeleteConfirmationPopup";
 import AddColumnPopup from "./AddColumnPopup";
 import ColumnFilter from "./ColumnFilter"; 
+import Icon from '@mdi/react';
+import { mdiTrashCanOutline } from '@mdi/js';
+
 
 
 function Table() {
@@ -11,14 +14,14 @@ function Table() {
     Array(6).fill().map(() => ({ product_link: "", name: "", ingredients: [], price: "" }))
   );
   
+ 
       
   const [columns, setColumns] = useState([
-    "product_link",
-    "name",
-    "ingredients",
-    "price",
+    { name: "product_link", type: "text" },
+    { name: "name", type: "text" },
+    { name: "ingredients", type: "text" },
+    { name: "price", type: "number" }
   ]);
-
   const [currentCell, setCurrentCell] = useState({ rowIndex: null, columnKey: "" });
   const [inputValue, setInputValue] = useState("");
   const [currentValues, setCurrentValues] = useState([]);
@@ -27,6 +30,8 @@ function Table() {
   const [isAddColumnPopupOpen, setIsAddColumnPopupOpen] = useState(false);
   const [rowToDelete, setRowToDelete] = useState(null);
   const [filters, setFilters] = useState({});
+  const [originalRows, setOriginalRows] = useState(rows);
+
 
   const [currentPage, setCurrentPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6); 
@@ -47,15 +52,26 @@ function Table() {
     setRows(filteredRows);
     setFilters({ ...filters, [columnKey]: { contains, doesNotContain } });
   };
-  
+
+
+
   const openPopup = (rowIndex, columnKey) => {
     const globalRowIndex = currentPage * rowsPerPage + rowIndex;
-    setCurrentCell({ rowIndex: globalRowIndex, columnKey });
+    const column = columns.find(col => col.name === columnKey);
+  
+    // Check if column exists
+    if (!column) {
+      console.error(`Column with key "${columnKey}" not found`);
+      return;
+    }
+  
+    setCurrentCell({ rowIndex: globalRowIndex, columnKey, columnType: column.type });
     setCurrentValues(rows[globalRowIndex][columnKey] || []);
     setIsPopupOpen(true);
     setInputValue("");
   };
   
+
 
   const saveValues = () => {
     const updatedRows = rows.map((row, i) =>
@@ -64,7 +80,6 @@ function Table() {
     setRows(updatedRows);
     setIsPopupOpen(false);
   };
-  
   const resetColumnFilters = (columnKey) => {
     const newFilters = { ...filters };
     if (newFilters[columnKey]) {
@@ -78,12 +93,17 @@ function Table() {
     const globalIndex = currentPage * rowsPerPage + localIndex;
     setRowToDelete(globalIndex);
     setIsDeletePopupOpen(true);
+    console.log(`Row marked for deletion:`, rows[globalIndex]); 
   };
+  
+  useEffect(() => {
+    setOriginalRows(rows);
+  }, [rows]);
   
 
   const deleteRow = () => {
     const updatedRows = rows.filter((_, i) => i !== rowToDelete);
-  
+    console.log(`Row deleted:`, rows[rowToDelete]);
   
     const newPageCount = Math.ceil(updatedRows.length / rowsPerPage);
     if (currentPage >= newPageCount && newPageCount > 0) {
@@ -97,13 +117,17 @@ function Table() {
   
 
   const addRow = () => {
-    const newRow = columns.reduce((acc, col) => ({ ...acc, [col]: "" }), {});
+    const newRow = columns.reduce((acc, col) => ({ ...acc, [col.name]: "" }), {});
     setRows([...rows, newRow]);
+    console.log(`Row added:`, newRow); 
   };
 
+
+  
   const addColumn = (fieldName, fieldType) => {
-    setColumns([...columns, fieldName]);
+    setColumns([...columns, { name: fieldName, type: fieldType }]);  
     setRows(rows.map((row) => ({ ...row, [fieldName]: "" }))); 
+    console.log(`Column added: { name: ${fieldName}, type: ${fieldType} }`);
   };
   
 
@@ -138,15 +162,18 @@ function Table() {
       <div className="overflow-x-auto">
         <table className="min-w-[75%] min-h-96 bg-[#27282D] text-white shadow-lg">
           <thead>
-            <tr>
+            <tr >
               <th className="px-4 py-2 text-xs text-center border-r ">#</th>
               {columns.map((col, idx) => (
-                <th key={idx} className="relative px-4 py-2 text-xs text-left border-r-white border-r">
-                  {col.toUpperCase()}
-                  <ColumnFilter 
-  columnKey={col} 
+                <th key={idx} className="relative px-4 py-2 text-xs text-left border-r-white border-r ">
+                  {col.name.toUpperCase()}
+                  <ColumnFilter
+fieldType={col.type} 
+  columnKey={col.name} 
   filterRows={filterRows} 
   resetColumnFilters={resetColumnFilters} 
+  originalRows={originalRows} // Pass originalRows as a prop
+  setRows={setRows} // Pass setRows as a prop
 />
 
                 </th>
@@ -166,16 +193,16 @@ function Table() {
       </td>
       {columns.map((key) => (
         <td
-          key={key}
+          key={key.name}
           className="border border-white/20 border-t-0 border-r  border-r-white px-4 py-2 cursor-pointer text-left"
-          onClick={() => openPopup(index, key)}
+          onClick={() => openPopup(index, key.name)}
         >
-          {Array.isArray(row[key]) ? row[key].join(", ") : row[key]}
+          {Array.isArray(row[key.name]) ? row[key.name].join(", ") : row[key.name]}
         </td>
       ))}
       <td className="border border-white/25 border-t-0 border-r-white px-4  py-2 text-center">
         <button className="text-[12px]"  onClick={() => confirmDeleteRow(index)}>
-          🗑️
+        <Icon path={mdiTrashCanOutline} size={0.7} color="rgba(255, 255, 255, 0.5)" />
         </button>
       </td>
     </tr>
@@ -260,17 +287,20 @@ function Table() {
         </div>
       </div>
 
-      {/* Popup for editing cell values */}
+  
+
+
       {isPopupOpen && (
-        <Popup
-          currentValues={currentValues}
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          setCurrentValues={setCurrentValues}
-          setIsPopupOpen={setIsPopupOpen}
-          saveValues={saveValues}
-        />
-      )}
+  <Popup
+    currentValues={currentValues}
+    inputValue={inputValue}
+    setInputValue={setInputValue}
+    setCurrentValues={setCurrentValues}
+    setIsPopupOpen={setIsPopupOpen}
+    saveValues={saveValues}
+    columnType={currentCell.columnType} 
+  />
+)}
 
       {/* Popup for confirming row deletion */}
       {isDeletePopupOpen && (
