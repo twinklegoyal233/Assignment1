@@ -7,9 +7,9 @@ function ColumnFilter({
   columnKey,
   fieldType,
   filterRows,
-  resetColumnFilters,
   originalRows,
   setRows,
+updatedRows
 }) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [containsList, setContainsList] = useState([]);
@@ -110,17 +110,17 @@ function ColumnFilter({
     closeDropdown();
   };
   
-
   const resetFilters = () => {
     setContainsList([]);
     setDoesNotContainList([]);
     setNumberInput("");
-    setSelectedOperation(">");
-
-    const resetData = JSON.parse(JSON.stringify(originalRows));
-    setRows(resetData);
-    resetColumnFilters(columnKey);
+    setSelectedOperation("");
+    setRows(updatedRows);   
+    closeDropdown();
   };
+  
+
+
 
   const closeDropdown = () => {
     setIsDropdownOpen(false);
@@ -158,7 +158,7 @@ function ColumnFilter({
                   onChange={handleOperationChange}
                 >
                   
-                  <option value=">">Select an Operation</option>
+                  <option value="">Select an Operation</option>
                   <option value=">">Greater than</option>
                   <option value="<">Less than</option>
                   <option value="=">Equal to</option>

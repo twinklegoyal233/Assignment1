@@ -31,7 +31,7 @@ function Table() {
   const [rowToDelete, setRowToDelete] = useState(null);
   const [filters, setFilters] = useState({});
   const [originalRows, setOriginalRows] = useState(rows);
-
+  const [updatedRows, setUpdatedRows] = useState(originalRows);
 
   const [currentPage, setCurrentPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(6); 
@@ -78,8 +78,11 @@ function Table() {
       i === currentCell.rowIndex ? { ...row, [currentCell.columnKey]: currentValues } : row
     );
     setRows(updatedRows);
+    setUpdatedRows(updatedRows)
     setIsPopupOpen(false);
   };
+
+
   const resetColumnFilters = (columnKey) => {
     const newFilters = { ...filters };
     if (newFilters[columnKey]) {
@@ -123,6 +126,18 @@ function Table() {
   };
 
 
+  const handleCellEdit = (rowIndex, columnKey, newValue) => {
+
+    const updatedRows = [...rows];
+    updatedRows[rowIndex][columnKey] = newValue;
+    setRows(updatedRows);
+  
+   
+    const updatedOriginalRows = [...originalRows];
+    updatedOriginalRows[rowIndex][columnKey] = newValue;
+    setOriginalRows(updatedOriginalRows);
+  };
+  
   
   const addColumn = (fieldName, fieldType) => {
     setColumns([...columns, { name: fieldName, type: fieldType }]);  
@@ -172,8 +187,9 @@ fieldType={col.type}
   columnKey={col.name} 
   filterRows={filterRows} 
   resetColumnFilters={resetColumnFilters} 
-  originalRows={originalRows} // Pass originalRows as a prop
-  setRows={setRows} // Pass setRows as a prop
+  originalRows={originalRows} 
+  setRows={setRows} 
+  updatedRows={updatedRows}
 />
 
                 </th>
@@ -299,6 +315,10 @@ fieldType={col.type}
     setIsPopupOpen={setIsPopupOpen}
     saveValues={saveValues}
     columnType={currentCell.columnType} 
+    handleCellEdit={handleCellEdit}
+    rowIndex={currentCell.rowIndex}  
+    columnKey={currentCell.columnKey} 
+   
   />
 )}
 

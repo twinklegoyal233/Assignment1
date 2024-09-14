@@ -7,7 +7,10 @@ function Popup({
   setCurrentValues,
   setIsPopupOpen,
   saveValues,
-  columnType
+  columnType,
+  handleCellEdit,
+  rowIndex,
+  columnKey,
 }) {
   const popupRef = useRef(null);
 
@@ -32,8 +35,9 @@ function Popup({
         alert("Please enter a valid number");
         return;
       }
-      setCurrentValues([...currentValues, inputValue]);
-      setInputValue("");
+      const updatedValues = [...currentValues, inputValue];
+      setCurrentValues(updatedValues);
+      setInputValue(""); 
     }
   };
 
@@ -42,7 +46,7 @@ function Popup({
     if (columnType === "number" && isNaN(value)) {
       return;
     }
-    // Remove date validation
+   
     setInputValue(value);
   };
 
@@ -56,7 +60,7 @@ function Popup({
         ref={popupRef}
         className="p-6 bg-[#27282D] w-[350px] rounded-md border border-white/5 shadow-lg max-w-lg mx-auto"
       >
-        {/* Remove DatePicker and LocalizationProvider */}
+       
         {columnType === "date" ? (
           <input
             type="date"
@@ -105,7 +109,16 @@ function Popup({
           </button>
           <button
             className="bg-[#285EF4] px-10 py-2 text-[14px] text-white rounded-md"
-            onClick={saveValues}
+            onClick={() => {
+              saveValues();
+              console.log("handleCellEdit called with:", {
+                rowIndex,
+                columnKey,
+                currentValues,
+              });
+
+              handleCellEdit(rowIndex, columnKey, currentValues); 
+            }}
           >
             Save
           </button>
